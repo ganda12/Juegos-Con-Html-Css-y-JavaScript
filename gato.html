@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Juego del Gato</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+  }
+  .board {
+    display: inline-block;
+    margin-top: 20px;
+  }
+  .row {
+    clear: both;
+  }
+  .cell {
+    width: 100px;
+    height: 100px;
+    border: 1px solid black;
+    font-size: 60px;
+    float: left;
+    box-sizing: border-box;
+    text-align: center;
+    line-height: 100px;
+    cursor: pointer;
+  }
+  #reset {
+    margin-top: 20px;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+  <h1>Juego del Gato</h1>
+  <button id="toggleComputer" onclick="toggleComputer()">Jugar contra la Computadora</button>
+  <button id="easyMode" onclick="toggleEasyMode()">Modo Fácil</button>
+  <div id="message"></div>
+  <div class="board" id="board">
+    <div class="row">
+      <div class="cell" onclick="makeMove(0)"></div>
+      <div class="cell" onclick="makeMove(1)"></div>
+      <div class="cell" onclick="makeMove(2)"></div>
+    </div>
+    <div class="row">
+      <div class="cell" onclick="makeMove(3)"></div>
+      <div class="cell" onclick="makeMove(4)"></div>
+      <div class="cell" onclick="makeMove(5)"></div>
+    </div>
+    <div class="row">
+      <div class="cell" onclick="makeMove(6)"></div>
+      <div class="cell" onclick="makeMove(7)"></div>
+      <div class="cell" onclick="makeMove(8)"></div>
+    </div>
+  </div>
+  <button id="reset" onclick="resetGame()">Reiniciar Juego</button>
+
+  <script>
+    let currentPlayer = 'X';
+    let board = ['', '', '', '', '', '', '', '', ''];
+    let computerPlayer = false;
+    let easyMode = false;
+    const winningCombos = [
+      [0, 1, 2], [3, 4, 5], [6, 7, 8], // horizontal
+      [0, 3, 6], [1, 4, 7], [2, 5, 8], // vertical
+      [0, 4, 8], [2, 4, 6] // diagonal
+    ];
+
+    function makeMove(cellIndex) {
+      if (board[cellIndex] === '' && !checkWinner()) {
+        board[cellIndex] = currentPlayer;
+        document.getElementsByClassName('cell')[cellIndex].textContent = currentPlayer;
+        if (checkWinner()) {
+          document.getElementById('message').textContent = currentPlayer + ' ha ganado!';
+        } else if (board.every(cell => cell !== '')) {
+          document.getElementById('message').textContent = '¡Empate!';
+        } else {
+          if (currentPlayer === 'X') {
+            currentPlayer = 'O';
+            if (computerPlayer) {
+              setTimeout(computerMove, 500); // La computadora juega después de 0.5 segundos
+            }
+          } else {
+            currentPlayer = 'X';
+          }
+        }
+      }
+    }
+
+    function computerMove() {
+      if (!checkWinner()) {
+        if (easyMode) {
+          let emptyCells = [];
+          for (let i = 0; i < board.length; i++) {
+            if (board[i] === '') {
+              emptyCells.push(i);
+            }
+          }
+          const randomIndex = Math.floor(Math.random() * emptyCells.length);
+          makeMove(emptyCells[randomIndex]);
+        } else {
+          let bestScore = -Infinity;
+          let move;
+          for (let i = 0; i < board.length; i++) {
+            if (board[i] === '') {
+              board[i] = 'O';
+              let score = minimax(board, 0, false);
+              board[i] = '';
+              if (score > bestScore) {
+                bestScore = score;
+                move = i;
+              }
+            }
+          }
+          makeMove(move);
+        }
+      }
+    }
+
+    function minimax(board, depth, isMaximizing) {
+      let result = checkWinner();
+      if (result !== false) {
+        return result === 'O' ? 1 : -1;
+      }
+      if (board.every(cell => cell !== '')) {
+        return 0;
+      }
+      if (isMaximizing) {
+        let bestScore = -Infinity;
+        for (let i = 0; i < board.length; i++) {
+          if (board[i] === '') {
+            board[i] = 'O';
+            let score = minimax(board, depth + 1, false);
+            board[i] = '';
+            bestScore = Math.max(score, bestScore);
+          }
+        }
+        return bestScore;
+      } else {
+        let bestScore = Infinity;
+        for (let i = 0; i < board.length; i++) {
+          if (board[i] === '') {
+            board[i] = 'X';
+            let score = minimax(board, depth + 1, true);
+            board[i] = '';
+            bestScore = Math.min(score, bestScore);
+          }
+        }
+        return bestScore;
+      }
+    }
+
+    function checkWinner() {
+      for (let combo of winningCombos) {
+        const [a, b, c] = combo;
+        if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+          return board[a];
+        }
+      }
+      return false;
+    }
+
+    function resetGame() {
+      currentPlayer = 'X';
+      board = ['', '', '', '', '', '', '', '', ''];
+      document.getElementById('message').textContent = '';
+      const cells = document.getElementsByClassName('cell');
+      for (let cell of cells) {
+        cell.textContent = '';
+      }
+    }
+
+    function toggleComputer() {
+      computerPlayer = !computerPlayer;
+      if (computerPlayer) {
+        document.getElementById('toggleComputer').textContent = 'Jugar contra otro Jugador';
+      } else {
+        document.getElementById('toggleComputer').textContent = 'Jugar contra la Computadora';
+      }
+    }
+
+    function toggleEasyMode() {
+      easyMode = !easyMode;
+      if (easyMode) {
+        document.getElementById('easyMode').textContent = 'Modo Normal';
+      } else {
+        document.getElementById('easyMode').textContent = 'Modo Fácil';
+      }
+    }
+  </script>
+</body>
+</html>
